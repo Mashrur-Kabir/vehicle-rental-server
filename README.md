@@ -376,6 +376,162 @@ app.listen(port, () => {
 
 ---
 
+# Production Build & Deployment (Vercel)
+
+This section explains how to prepare the backend for **production** and deploy it to **Vercel** using the CLI.
+
+---
+
+## 1. Create Production Build
+
+Inside your `package.json`, under `"scripts"`, add:
+
+```json
+"build": "tsc"
+```
+
+Now run:
+
+```bash
+npm run build
+```
+
+This will generate a **dist/** folder containing compiled `.js` files.
+
+### Add `dist/` to `.gitignore`
+
+```
+dist
+```
+
+Why?
+
+> The `dist` folder is auto-generated. You never push build files to Git.
+> Deployment platforms like Vercel generate their own builds.
+
+---
+
+## 2. Deploy to Vercel Using CLI
+
+### Install the Vercel CLI globally:
+
+```bash
+npm i -g vercel
+```
+
+### Login to Vercel:
+
+```bash
+vercel login
+```
+
+You will receive a link like:
+
+```
+https://vercel.com/oauth/device?user_code=XXXXXXX
+```
+
+Open it in your browser → approve → logged in.
+
+---
+
+## 3. Create `vercel.json` Configuration
+
+Inside the root of your project, create:
+
+### `vercel.json`
+
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "dist/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dist/server.js"
+    }
+  ]
+}
+```
+
+Why `server.js` and NOT `server.ts`?
+
+- Vercel runs **Node.js**, which only executes **JavaScript**, not TypeScript.
+- Your TypeScript code gets compiled into `/dist/server.js` after running `npm run build`.
+- Therefore, deployment must point to the compiled JS file.
+
+---
+
+## Deploy to Production
+
+Run:
+
+```bash
+vercel --prod
+```
+
+Follow prompts:
+
+| Prompt               | Answer      |
+| -------------------- | ----------- |
+| Set up project?      | **Y**       |
+| Existing project?    | **N**       |
+| Project name         | your choice |
+| Which directory?     | `./`        |
+| Additional settings? | **N**       |
+| Pull env variables?  | **Y**       |
+| Connect Git repo?    | **N**       |
+
+Your deployment starts.
+
+At the end you’ll see:
+
+- **Inspect URL** → check logs
+- **Domain URL** → your live API
+
+---
+
+## 5. Fixing Common 404 (Missing Environment Variables)
+
+If your API shows 404 or server errors, you may have missed environment variables.
+
+### Add environment variables in Vercel:
+
+1. Go to your project in Vercel Dashboard
+2. Open **Settings → Environment Variables**
+3. Click **Import**
+4. Upload your local `.env` file
+5. **Remove PORT** (`PORT` must NOT exist on Vercel — it will auto-assign one)
+6. Save
+
+---
+
+## 6. Redeploy After Updating Environment Variables
+
+```bash
+vercel --prod
+```
+
+After deployment completes:
+
+- Open **Inspect URL** → check logs
+- Click the **Domain URL** → the backend is live
+
+---
+
+## Deployment Summary
+
+- Build TypeScript → JavaScript
+- Deploy only compiled JS
+- Configure Vercel to use `dist/server.js`
+- Move environment variables → Vercel Dashboard
+- Never set `PORT` manually on Vercel
+
 ---
 
 # Final Project Structure
