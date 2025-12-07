@@ -522,6 +522,8 @@ After deployment completes:
 - Open **Inspect URL** → check logs
 - Click the **Domain URL** → the backend is live
 
+Deployment is **done**.
+
 ---
 
 ## Deployment Summary
