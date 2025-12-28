@@ -28,13 +28,14 @@ const createBookingIntoDB = async (payload: Record<string, unknown>) => {
   const endDate = new Date(rent_end_date as string);
 
   const totalRentDays = Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) + 1
   );
 
   const total_price = totalRentDays * targetVehicle.daily_rent_price;
 
   const bookingResult = await pool.query(
-    `INSERT INTO bookings (customer_id, vehicle_id, rent_start_date, rent_end_date, total_price, status) VALUES($1, $2, $3, $4, $5, $6) RETURNING *`,
+    `INSERT INTO bookings (customer_id, vehicle_id, rent_start_date, rent_end_date, total_price, status) 
+     VALUES($1, $2, $3, $4, $5, $6) RETURNING *`,
     [
       customer_id,
       vehicle_id,
@@ -45,26 +46,21 @@ const createBookingIntoDB = async (payload: Record<string, unknown>) => {
     ]
   );
 
-  //update `vehicles` table
   await pool.query(
     `UPDATE vehicles SET availability_status = $1 WHERE id = $2`,
     ["booked", vehicle_id]
   );
 
-  const vehicle = {
-    vehicle_name: targetVehicle.vehicle_name,
-    daily_rent_price: targetVehicle.daily_rent_price,
-  };
+  const bookingData = bookingResult.rows[0];
 
   return {
-    ...bookingResult.rows[0],
-    rent_start_date: new Date(bookingResult.rows[0].rent_start_date)
-      .toISOString()
-      .split("T")[0],
-    rent_end_date: new Date(bookingResult.rows[0].rent_end_date)
-      .toISOString()
-      .split("T")[0],
-    vehicle,
+    ...bookingData,
+    rent_start_date: rent_start_date,
+    rent_end_date: rent_end_date,
+    vehicle: {
+      vehicle_name: targetVehicle.vehicle_name,
+      daily_rent_price: targetVehicle.daily_rent_price,
+    },
   };
 };
 
@@ -103,14 +99,17 @@ const getBookingsForCustomerFromDB = async (customerId: string) => {
   const result = [];
 
   for (const i of bookings.rows) {
-    const vehicle = await pool.query(
+    const vehicleRes = await pool.query(
       `SELECT vehicle_name, registration_number, type FROM vehicles WHERE id = $1`,
       [i.vehicle_id]
     );
 
+    // destructure i to extract "customer_id"
+    const { customer_id, ...bookingData } = i;
+
     result.push({
-      ...i,
-      vehicle: vehicle.rows[0],
+      ...bookingData,
+      vehicle: vehicleRes.rows[0],
     });
   }
 

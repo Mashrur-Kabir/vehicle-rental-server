@@ -86,13 +86,13 @@ Add in `package.json`:
 }
 ```
 
-Run:
+**Run (For local testing and development):**
 
 ```bash
 npm run dev
 ```
 
-> **TSX is faster, zero config, and far better than ts-node for dev use.**
+> TSX is faster, zero config, and far better than ts-node for dev use.
 
 ---
 

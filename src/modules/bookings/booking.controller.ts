@@ -54,11 +54,18 @@ const getAllBookings = async (req: Request, res: Response) => {
       });
     }
 
-    //date formatting:
+    const formatDate = (date: Date | string) => {
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     const formattedResult = result.map((i: any) => ({
       ...i,
-      rent_start_date: new Date(i.rent_start_date).toISOString().split("T")[0],
-      rent_end_date: new Date(i.rent_end_date).toISOString().split("T")[0],
+      rent_start_date: formatDate(i.rent_start_date),
+      rent_end_date: formatDate(i.rent_end_date),
     }));
 
     return res.status(200).json({
